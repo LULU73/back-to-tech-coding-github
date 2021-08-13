@@ -1,0 +1,9 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<RunSettings>
+  <!-- Parameters used by tests at runtime -->
+  <TestRunParameters>
+    <Parameter name="siteUrl" value="http://localhost:4078/" />
+    <Parameter name="headless" value="false" />
+    <Parameter name="environment" value="local" />
+  </TestRunParameters>
+</RunSettings>
