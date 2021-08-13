@@ -70,5 +70,3 @@ jobs:
       run: |
         msbuild $env:Solution_Name /t:Restore,Build /p:Configuration=$env:Configuration
         msbuild $env:Solution_Name /t:Restore,Build /p:Configuration=$env:Configuration
-      env:
-        Configuration: ${{ configuration }}
