@@ -48,15 +48,11 @@ jobs:
 
   build:
 
-    strategy:
-      matrix:
-        configuration: [Release]
-
     runs-on: windows-latest  # For a list of available runner types, refer to
                              # https://help.github.com/en/actions/reference/workflow-syntax-for-github-actions#jobsjob_idruns-on
-
     env:
       Solution_Name: Sources/TalentAgileShop.sln                         # Replace with your solution name, i.e. MyWpfApp.sln.
+      configuration: Release
       # Test_Project_Path: your-test-project-path                 # Replace with the path to your test project, i.e. MyWpfApp.Tests\MyWpfApp.Tests.csproj.
       
     steps:
@@ -71,6 +67,8 @@ jobs:
 
     # Restore the application to populate the obj folder with RuntimeIdentifiers
     - name: Build the application
-      run: msbuild $env:Solution_Name /t:Restore,Build /p:Configuration=$env:Configuration
+      run: |
+        msbuild $env:Solution_Name /t:Restore,Build /p:Configuration=$env:Configuration
+        msbuild $env:Solution_Name /t:Restore,Build /p:Configuration=$env:Configuration
       env:
-        Configuration: ${{ matrix.configuration }}
+        Configuration: ${{ configuration }}
