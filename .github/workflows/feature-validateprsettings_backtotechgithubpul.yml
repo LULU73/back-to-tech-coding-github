@@ -23,10 +23,12 @@ jobs:
       uses: NuGet/setup-nuget@v1.0.5
 
     - name: Restore NuGet packages
-      run: nuget restore
+      run: |
+        Set-Location ${{ github.workspace }}\sources
+        nuget restore
 
     - name: Publish to folder
-      run: 
+      run: |
         Set-Location ${{ github.workspace }}\sources
         msbuild /nologo /verbosity:m /t:Build /t:pipelinePreDeployCopyAllFilesToOneFolder /p:_PackageTempDir="\published\"
 
