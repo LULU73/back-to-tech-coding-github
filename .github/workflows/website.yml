@@ -95,3 +95,17 @@ jobs:
         path: '*.trx'
         working-directory: testresults
         reporter: dotnet-trx 
+    - name: 'Publish WebPack results'
+      uses: actions/upload-artifact@v2
+      if: always()
+      with:
+        name: web_pack
+        path: ${{ github.workspace }}\webpackage\**\*.*
+        if-no-files-found: warn
+    - name: 'Publish tests results'
+      uses: actions/upload-artifact@v2
+      if: always()
+      with:
+        name: dev_test_result
+        path: ${{ github.workspace }}\testresults\**\*.*
+        if-no-files-found: warn
