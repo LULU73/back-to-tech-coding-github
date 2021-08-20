@@ -69,4 +69,28 @@ jobs:
     - name: Build the application
       run: |
         msbuild $env:Solution_Name /t:Restore /p:Configuration=$env:Configuration /p:Platform="Any CPU" /p:RestorePackagesConfig="true"
-        msbuild $env:Solution_Name /t:Build /p:Configuration=$env:Configuration /p:Platform="Any CPU"
+        msbuild $env:Solution_Name /t:Build /p:Configuration=$env:Configuration /p:Platform="Any CPU" /p:DeployOnBuild=true /p:WebPublishMethod=Package /p:PackageAsSingleFile=true /p:SkipInvalidConfigurations=true /p:PackageLocation="${{ github.workspace }}\webpackage"
+    - name: 'Run Tests'
+      run: |
+          $vsinstalls = vswhere -all -prerelease -format json | ConvertFrom-Json
+          $vsPath = ($vsinstalls | Where-Object { $_.isPrerelease -eq $false -and $_.catalog.productLineVersion -eq 2019 })
+          New-Alias "VSTest" (Join-Path $vsPath.installationPath "\Common7\IDE\CommonExtensions\Microsoft\TestWindow\vstest.console.exe") -Force
+          $nbi = Get-ChildItem -Include @('*.Tests.dll') -Recurse
+          Write-Host "Found tests : $nbi" -ForegroundColor Cyan
+          if(!(Test-Path ".\testresults\")){
+            New-Item -Path ".\testresults\" -ItemType Directory | Out-Null
+          }
+          $TestResultDirectory = (Resolve-Path .\testresults\).Path
+          $nbi | ForEach-Object {
+            $item = Get-Item $_
+            Push-Location $item.Directory
+            VSTest "$_" --ResultsDirectory:"$TestResultDirectory" /logger:trx /logger:console
+            Pop-Location
+          }
+    - name: Test Report
+      uses: dorny/test-reporter@v1
+      if: success() || failure()    # run this step even if previous step failed
+      with:
+        name: Unit Tests            # Name of the check run which will be created
+        path: .\testresults\**\*.trx    # Path to test results
+        reporter: dotnet-trx 
