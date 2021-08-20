@@ -69,7 +69,8 @@ jobs:
     - name: Build the application
       run: |
         msbuild $env:Solution_Name /t:Restore /p:Configuration=$env:Configuration /p:Platform="Any CPU" /p:RestorePackagesConfig="true"
-        msbuild $env:Solution_Name /t:Build /p:Configuration=$env:Configuration /p:Platform="Any CPU" /p:DeployOnBuild=true /p:WebPublishMethod=Package /p:PackageAsSingleFile=false /p:SkipInvalidConfigurations=true /p:PackageLocation="${{ github.workspace }}\webpackage"
+        msbuild $env:Solution_Name /t:Build /p:Configuration=$env:Configuration /p:Platform="Any CPU"
+        msbuild TalentAgileShop.Web/TalentAgileShop.Web.csproj /verbosity:m /t:Build /p:Configuration=$env:Configuration /p:Platform="Any CPU"  /t:pipelinePreDeployCopyAllFilesToOneFolder /p:_PackageTempDir="${{ github.workspace }}\webpackage"
     - name: 'Run Tests'
       run: |
           $vsinstalls = vswhere -all -prerelease -format json | ConvertFrom-Json
