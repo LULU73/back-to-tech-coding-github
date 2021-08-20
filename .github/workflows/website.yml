@@ -130,12 +130,14 @@ jobs:
       with:
         name: web_pack
         path: ${{ github.workspace }}/web_pack
-    - name: 'Run Tests'
-      run: |
-        Set-Location '${{ github.workspace }}'
-        Get-Location
-        gci -Recurse
-      
+    - name: 'Configure Bicep'
+      uses: cschleiden/replace-tokens@v1
+      with:
+        tokenPrefix: '#{'
+        tokenSuffix: '}#'
+        files: '["**/*.json"]'
+      env:
+        ShopDataContext: ${{ secrets.ShopDataContext }}
     - name: Deploy to Azure Web App
       id: deploy-to-webapp
       uses: azure/webapps-deploy@v2
