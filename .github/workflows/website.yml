@@ -80,7 +80,7 @@ jobs:
           if(!(Test-Path ".\testresults\")){
             New-Item -Path ".\testresults\" -ItemType Directory | Out-Null
           }
-          $TestResultDirectory = (Resolve-Path .\testresults\).Path
+          $TestResultDirectory = (Resolve-Path  "${{ github.workspace }}\testresults\").Path
           $nbi | ForEach-Object {
             $item = Get-Item $_
             Push-Location $item.Directory
@@ -92,5 +92,5 @@ jobs:
       if: success() || failure()    # run this step even if previous step failed
       with:
         name: Unit Tests            # Name of the check run which will be created
-        path: .\testresults\**\*.trx    # Path to test results
+        path:  ${{ github.workspace }}\testresults\**\*.trx    # Path to test results
         reporter: dotnet-trx 
