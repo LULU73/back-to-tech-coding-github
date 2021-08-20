@@ -70,6 +70,7 @@ jobs:
       run: |
         msbuild $env:Solution_Name /t:Restore /p:Configuration=$env:Configuration /p:Platform="Any CPU" /p:RestorePackagesConfig="true"
         msbuild $env:Solution_Name /t:Build /p:Configuration=$env:Configuration /p:Platform="Any CPU" /p:DeployOnBuild=true /p:WebPublishMethod=Package /p:PackageAsSingleFile=true /p:SkipInvalidConfigurations=true /p:PackageLocation="${{ github.workspace }}\webpackage"
+        msbuild $env:Solution_Name /t:Build /p:Configuration=$env:Configuration /p:Platform="Any CPU" /t:pipelinePreDeployCopyAllFilesToOneFolder /p:_PackageTempDir="\published\"
     - name: 'Run Tests'
       run: |
           $vsinstalls = vswhere -all -prerelease -format json | ConvertFrom-Json
@@ -116,3 +117,28 @@ jobs:
         name: dev_test_result
         path: ${{ github.workspace }}\testresults\**\*.*
         if-no-files-found: warn
+    - name: Upload artifact for deployment job
+      uses: actions/upload-artifact@v2
+      with:
+        name: ASP-app
+        path: '/published/**'
+  deploy_pul:
+    runs-on: 'windows-latest'
+    needs: build
+    environment:
+      name: 'PUL'
+      url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
+
+    steps:
+    - name: Download artifact from build job
+      uses: actions/download-artifact@v2
+      with:
+        name: ASP-app
+    - name: Deploy to Azure Web App
+      id: deploy-to-webapp
+      uses: azure/webapps-deploy@v2
+      with:
+        app-name: 'backtotechgithubpul'
+        slot-name: 'production'
+        publish-profile: ${{ secrets.PUBLISHPROFILE }}
+        package: .
