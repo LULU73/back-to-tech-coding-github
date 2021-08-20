@@ -128,10 +128,12 @@ jobs:
       uses: actions/download-artifact@v2
       with:
         name: web_pack
+        path: ${{ github.workspace }}/web_pack
     - name: 'Run Tests'
       run: |
         Set-Location '${{ github.workspace }}'
-        gci -Directory -Recurse
+        Get-Location
+        gci -Recurse
       
     - name: Deploy to Azure Web App
       id: deploy-to-webapp
