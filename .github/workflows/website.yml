@@ -135,4 +135,4 @@ jobs:
         app-name: 'backtotechgithubpul'
         slot-name: 'production'
         publish-profile: ${{ secrets.PUBLISHPROFILE }}
-        package: ${{ github.workspace }}\web_pack\TalentAgileShop.Web.zip
+        package: .
