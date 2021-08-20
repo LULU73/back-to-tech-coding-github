@@ -135,7 +135,7 @@ jobs:
       with:
         tokenPrefix: '#{'
         tokenSuffix: '}#'
-        files: '["**/*.json"]'
+        files: '["**/Web.config"]'
       env:
         ShopDataContext: ${{ secrets.ShopDataContext }}
     - name: Deploy to Azure Web App
