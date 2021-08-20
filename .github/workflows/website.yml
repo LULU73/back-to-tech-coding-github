@@ -69,7 +69,7 @@ jobs:
     - name: Build the application
       run: |
         msbuild $env:Solution_Name /t:Restore /p:Configuration=$env:Configuration /p:Platform="Any CPU" /p:RestorePackagesConfig="true"
-        msbuild $env:Solution_Name /t:Build /p:Configuration=$env:Configuration /p:Platform="Any CPU" /p:DeployOnBuild=true /p:WebPublishMethod=Package /p:PackageAsSingleFile=true /p:SkipInvalidConfigurations=true /p:PackageLocation="${{ github.workspace }}\webpackage"
+        msbuild $env:Solution_Name /t:Build /p:Configuration=$env:Configuration /p:Platform="Any CPU" /p:DeployOnBuild=true /p:WebPublishMethod=Package /p:PackageAsSingleFile=false /p:SkipInvalidConfigurations=true /p:PackageLocation="${{ github.workspace }}\webpackage"
     - name: 'Run Tests'
       run: |
           $vsinstalls = vswhere -all -prerelease -format json | ConvertFrom-Json
@@ -142,4 +142,4 @@ jobs:
         app-name: 'backtotechgithubpul'
         slot-name: 'production'
         publish-profile: ${{ secrets.PUBLISHPROFILE }}
-        package: '${{ github.workspace }}\web_pack\TalentAgileShop.Web.zip'
+        package: '${{ github.workspace }}\web_pack\'
