@@ -128,6 +128,11 @@ jobs:
       uses: actions/download-artifact@v2
       with:
         name: web_pack
+    - name: 'Run Tests'
+      run: |
+        Set-Location '${{ github.workspace }}'
+        gci -Directory -Recurse
+      
     - name: Deploy to Azure Web App
       id: deploy-to-webapp
       uses: azure/webapps-deploy@v2
@@ -135,4 +140,4 @@ jobs:
         app-name: 'backtotechgithubpul'
         slot-name: 'production'
         publish-profile: ${{ secrets.PUBLISHPROFILE }}
-        package: .
+        package: '${{ github.workspace }}\web_pack\TalentAgileShop.Web.zip'
