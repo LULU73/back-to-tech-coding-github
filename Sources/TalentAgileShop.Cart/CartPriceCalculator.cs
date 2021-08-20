@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using TalentAgileShop.Model;
 
 namespace TalentAgileShop.Cart
@@ -20,10 +21,11 @@ namespace TalentAgileShop.Cart
         public CartPrice ComputePrice(List<CartItem> items, string discountCode)
         {
 
+            var articleCount = items.Sum(i => i.Count);
             var result = new CartPrice
             {
-                ProductCost = 0,
-                DeliveryCost = 0
+                ProductCost = items.Aggregate((decimal)0, (a, b) => a + b.Count * b.Product.Price),
+                DeliveryCost = (Math.Floor(articleCount / (decimal)5.0) + 1) * 3
             };
 
             return result;
