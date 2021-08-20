@@ -102,6 +102,13 @@ jobs:
         name: web_pack
         path: ${{ github.workspace }}\webpackage\**\*.*
         if-no-files-found: warn
+    - name: 'Publish DacPac results'
+      uses: actions/upload-artifact@v2
+      if: always()
+      with:
+        name: dacpac
+        path: ${{ github.workspace }}\**\*.dacpac
+        if-no-files-found: warn
     - name: 'Publish tests results'
       uses: actions/upload-artifact@v2
       if: always()
