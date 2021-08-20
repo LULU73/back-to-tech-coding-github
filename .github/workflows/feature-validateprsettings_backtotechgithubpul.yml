@@ -30,7 +30,7 @@ jobs:
     - name: Publish to folder
       run: |
         Set-Location ${{ github.workspace }}\sources
-        msbuild /nologo /verbosity:m /t:Build /t:pipelinePreDeployCopyAllFilesToOneFolder /p:_PackageTempDir="\published\"
+        msbuild TalentAgileShop.Web/TalentAgileShop.Web.csproj /nologo /verbosity:m /t:Build /t:pipelinePreDeployCopyAllFilesToOneFolder /p:_PackageTempDir="\published\"
 
     - name: Upload artifact for deployment job
       uses: actions/upload-artifact@v2
