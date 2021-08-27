@@ -1,0 +1,148 @@
+# This workflow uses actions that are not certified by GitHub.
+# They are provided by a third-party and are governed by
+# separate terms of service, privacy policy, and support
+# documentation.
+
+# This workflow will build, test, sign and package a WPF or Windows Forms desktop application
+# built on .NET Core.
+# To learn how to migrate your existing application to .NET Core,
+# refer to https://docs.microsoft.com/en-us/dotnet/desktop-wpf/migration/convert-project-from-net-framework
+#
+# To configure this workflow:
+#
+# 1. Configure environment variables
+# GitHub sets default environment variables for every workflow run.
+# Replace the variables relative to your project in the "env" section below.
+#
+# 2. Signing
+# Generate a signing certificate in the Windows Application
+# Packaging Project or add an existing signing certificate to the project.
+# Next, use PowerShell to encode the .pfx file using Base64 encoding
+# by running the following Powershell script to generate the output string:
+#
+# $pfx_cert = Get-Content '.\SigningCertificate.pfx' -Encoding Byte
+# [System.Convert]::ToBase64String($pfx_cert) | Out-File 'SigningCertificate_Encoded.txt'
+#
+# Open the output file, SigningCertificate_Encoded.txt, and copy the
+# string inside. Then, add the string to the repo as a GitHub secret
+# and name it "Base64_Encoded_Pfx."
+# For more information on how to configure your signing certificate for
+# this workflow, refer to https://github.com/microsoft/github-actions-for-desktop-apps#signing
+#
+# Finally, add the signing certificate password to the repo as a secret and name it "Pfx_Key".
+# See "Build the Windows Application Packaging project" below to see how the secret is used.
+#
+# For more information on GitHub Actions, refer to https://github.com/features/actions
+# For a complete CI/CD sample to get started with GitHub Action workflows for Desktop Applications,
+# refer to https://github.com/microsoft/github-actions-for-desktop-apps
+
+name: Web Site building
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+
+  build:
+
+    runs-on: windows-latest  # For a list of available runner types, refer to
+                             # https://help.github.com/en/actions/reference/workflow-syntax-for-github-actions#jobsjob_idruns-on
+    env:
+      Solution_Name: Sources/TalentAgileShop.sln                         # Replace with your solution name, i.e. MyWpfApp.sln.
+      configuration: Release
+      # Test_Project_Path: your-test-project-path                 # Replace with the path to your test project, i.e. MyWpfApp.Tests\MyWpfApp.Tests.csproj.
+      
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+
+    # Add  MSBuild to the PATH: https://github.com/microsoft/setup-msbuild
+    - name: Setup MSBuild.exe
+      uses: microsoft/setup-msbuild@v1.0.2
+
+    # Restore the application to populate the obj folder with RuntimeIdentifiers
+    - name: Build the application
+      run: |
+        msbuild $env:Solution_Name /t:Restore /p:Configuration=$env:Configuration /p:Platform="Any CPU" /p:RestorePackagesConfig="true"
+        msbuild $env:Solution_Name /t:Build /p:Configuration=$env:Configuration /p:Platform="Any CPU"
+        msbuild Sources/TalentAgileShop.Web/TalentAgileShop.Web.csproj /verbosity:m /t:Build /p:OutputPath=bin/release/ /p:Configuration=$env:Configuration /p:Platform="Any CPU" /t:pipelinePreDeployCopyAllFilesToOneFolder /p:_PackageTempDir="${{ github.workspace }}\webpackage"
+    - name: 'Run Tests'
+      run: |
+          $vsinstalls = vswhere -all -prerelease -format json | ConvertFrom-Json
+          $vsPath = ($vsinstalls | Where-Object { $_.isPrerelease -eq $false -and $_.catalog.productLineVersion -eq 2019 })
+          New-Alias "VSTest" (Join-Path $vsPath.installationPath "\Common7\IDE\CommonExtensions\Microsoft\TestWindow\vstest.console.exe") -Force
+          $nbi = Get-ChildItem -Include @('*.Tests.dll') -Recurse
+          Write-Host "Found tests : $nbi" -ForegroundColor Cyan
+          if(!(Test-Path ".\testresults\")){
+            New-Item -Path ".\testresults\" -ItemType Directory | Out-Null
+          }
+          $TestResultDirectory = (Resolve-Path  "${{ github.workspace }}\testresults\").Path
+          $nbi | ForEach-Object {
+            $item = Get-Item $_
+            Push-Location $item.Directory
+            VSTest "$_" --ResultsDirectory:"$TestResultDirectory" /logger:trx /logger:console
+            Pop-Location
+          }
+    - name: Test Report
+      uses: dorny/test-reporter@v1
+      if: success() || failure()    # run this step even if previous step failed
+      with:
+        name: Unit Tests            # Name of the check run which will be created
+        path: '*.trx'
+        working-directory: testresults
+        reporter: dotnet-trx 
+    - name: 'Publish WebPack results'
+      uses: actions/upload-artifact@v2
+      if: always()
+      with:
+        name: web_pack
+        path: ${{ github.workspace }}\webpackage\**\*.*
+        if-no-files-found: warn
+    - name: 'Publish DacPac results'
+      uses: actions/upload-artifact@v2
+      if: always()
+      with:
+        name: dacpac
+        path: ${{ github.workspace }}\**\*.dacpac
+        if-no-files-found: warn
+    - name: 'Publish tests results'
+      uses: actions/upload-artifact@v2
+      if: always()
+      with:
+        name: dev_test_result
+        path: ${{ github.workspace }}\testresults\**\*.*
+        if-no-files-found: warn
+  deploy_pul:
+    runs-on: 'windows-latest'
+    needs: build
+    environment:
+      name: 'PUL'
+      url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
+
+    steps:
+    - name: Download artifact from build job
+      uses: actions/download-artifact@v2
+      with:
+        name: web_pack
+        path: ${{ github.workspace }}/web_pack
+    - name: 'Configure Bicep'
+      uses: cschleiden/replace-tokens@v1
+      with:
+        tokenPrefix: '#{'
+        tokenSuffix: '}#'
+        files: '["**/Web.config"]'
+      env:
+        ShopDataContext: ${{ secrets.ShopDataContext }}
+    - name: Deploy to Azure Web App
+      id: deploy-to-webapp
+      uses: azure/webapps-deploy@v2
+      with:
+        app-name: 'backtotechgithubpul'
+        slot-name: 'production'
+        publish-profile: ${{ secrets.PUBLISHPROFILE }}
+        package: '${{ github.workspace }}\web_pack\'
