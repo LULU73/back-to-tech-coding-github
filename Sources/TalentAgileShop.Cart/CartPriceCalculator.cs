@@ -25,7 +25,7 @@ namespace TalentAgileShop.Cart
             var result = new CartPrice
             {
                 ProductCost = items.Aggregate((decimal)0, (a, b) => a + b.Count * b.Product.Price),
-                DeliveryCost = (Math.Floor(articleCount / (decimal)5.0) + 1) * 3
+                DeliveryCost = (Math.Floor(articleCount / (decimal)5.0)) * 3
             };
 
             return result;
